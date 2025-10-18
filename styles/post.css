@@ -1,0 +1,69 @@
+:root {
+  color-scheme: light dark;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+  --color-bg: #ffffff;
+  --color-bg-dark: #0f172a;
+  --color-text: #1f2937;
+  --color-text-dark: #f8fafc;
+  --color-accent: #6366f1;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.7;
+  padding: 2rem 1.25rem 4rem;
+  display: flex;
+  justify-content: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: var(--color-bg-dark);
+    color: var(--color-text-dark);
+  }
+  a {
+    color: #a5b4fc;
+  }
+}
+
+article {
+  width: min(48rem, 100%);
+}
+
+header {
+  margin-bottom: 2.5rem;
+}
+
+header h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+}
+
+header time {
+  display: block;
+  font-size: 0.95rem;
+  color: rgba(31, 41, 55, 0.68);
+}
+
+section p {
+  margin-bottom: 1.25rem;
+  font-size: 1.05rem;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:hover,
+a:focus {
+  text-decoration: underline;
+}
+
+.back {
+  margin-bottom: 1rem;
+}
