@@ -5,7 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Test | Notes</title>
     <link rel="stylesheet" href="../../styles/post.css" />
-  </head>
+	<style>
+        #canvas {
+            margin: 0;
+            padding: 0;
+            border: 0;
+			width: 100%;
+			height: 100%;
+        }
+
+        #canvas {
+            display: block;
+        }
+
+        #canvas:focus {
+            outline: none;
+        }
+
+		.godot-stage {
+			position: relative;
+			display: inline-block;
+			overflow: hidden;
+			width: 400px;
+			height: 300px;
+		}
+
+		#status, #status-splash, #status-progress {
+			position: absolute;
+			left: 0;
+			right: 0;
+			width: 100%;
+		}
+
+		#status, #status-splash {
+			top: 0;
+			bottom: 0;
+			height: 100%;
+		}
+
+		#status {
+            background-color: #242424;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+			z-index: 1;
+			width: 100%;
+			height: 100%;
+        }
+
+        #status-splash {
+            max-height: 100%;
+            max-width: 100%;
+            margin: auto;
+        }
+
+        #status-splash.show-image--false {
+            display: none;
+        }
+
+        #status-splash.fullsize--true {
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+        }
+
+        #status-splash.use-filter--false {
+            image-rendering: pixelated;
+        }
+
+		#status-progress, #status-notice {
+            display: none;
+        }
+
+        #status-progress {
+            bottom: 10%;
+            width: 50%;
+            margin: 0 auto;
+        }
+
+        #status-notice {
+            background-color: #5b3943;
+            border-radius: 0.5rem;
+            border: 1px solid #9b3943;
+            color: #e0e0e0;
+            font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+            line-height: 1.3;
+            margin: 0 2rem;
+            overflow: hidden;
+            padding: 1rem;
+            text-align: center;
+            z-index: 1;
+        }
+
+		#godot-start-button {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.5rem;
+			padding: 0;
+			border: none;
+			border-radius: 0.5rem;
+			background: rgba(20, 20, 20, 0.75);
+			color: #f7f7f7;
+			font-family: inherit;
+			font-size: 1.05rem;
+			letter-spacing: 0.02em;
+			text-transform: uppercase;
+			cursor: pointer;
+			transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+			z-index: 2;
+			width: 100%;
+			height: 100%;
+		}
+
+		#godot-start-button:hover {
+			background: rgba(35, 35, 35, 0.85);
+			transform: scale(1.02);
+		}
+
+		#godot-start-button:active {
+			transform: scale(0.98);
+		}
+
+		#godot-start-button:focus-visible {
+			outline: 3px solid rgba(255, 255, 255, 0.9);
+			outline-offset: 3px;
+		}
+
+		#godot-start-button.is-hidden {
+			opacity: 0;
+			pointer-events: none;
+			transform: scale(1.04);
+		}
+    </style>
+    <link id="-gd-engine-icon" rel="icon" type="image/png" href="pipeline-work-stealing.icon.png" />
+    <link rel="apple-touch-icon" href="pipeline-work-stealing.apple-touch-icon.png"/>
+ </head>
   <body>
     <article>
       <header>
@@ -14,8 +153,169 @@
         <time datetime="2025-10-18">October 18, 2025</time>
       </header>
       <section>
-        <p>Hello world.</p>
-      </section>
+        <p>PipelineExecutor work stealing demo. This is based on real execution trace of ClickBench Q39 query with 8 parallel threads.</p>
+		<div class="godot-stage">
+			<canvas id="canvas">
+				Your browser does not support the canvas tag.
+			</canvas>
+			<div id="status">
+				<img id="status-splash" class="show-image--false fullsize--false use-filter--true" src="pipeline-work-stealing.png" alt="Loading Pipeline Work Stealing project">
+				<progress id="status-progress"></progress>
+				<div id="status-notice" role="status" aria-live="assertive"></div>
+			</div>
+			<button id="godot-start-button" class="godot-start-button is-hidden" type="button" aria-label="Play Pipeline Work Stealing demo" aria-hidden="true" disabled>
+				<span aria-hidden="true">▶ Play</span>
+			</button>
+		</div>
+
+		<noscript>
+			Your browser does not support JavaScript.
+		</noscript>
+
+		<script src="pipeline-work-stealing.js"></script>
+		<script>
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":1,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"pipeline-work-stealing","experimentalVK":false,"fileSizes":{"pipeline-work-stealing.pck":1159612,"pipeline-work-stealing.wasm":23160982},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_THREADS_ENABLED = false;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const statusOverlay = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice = document.getElementById('status-notice');
+	const startButton = document.getElementById('godot-start-button');
+
+	let initializing = true;
+	let statusMode = '';
+	let readyToStart = false;
+
+	function showStartButton() {
+		if (!startButton) {
+			return;
+		}
+		startButton.classList.remove('is-hidden');
+		startButton.disabled = false;
+		startButton.setAttribute('aria-hidden', 'false');
+	}
+
+	function hideStartButton() {
+		if (!startButton) {
+			return;
+		}
+		startButton.classList.add('is-hidden');
+		startButton.disabled = true;
+		startButton.setAttribute('aria-hidden', 'true');
+	}
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		hideStartButton();
+		if (err instanceof Error) {
+			setStatusNotice(err.message);
+		} else if (typeof err === 'string') {
+			setStatusNotice(err);
+		} else {
+			setStatusNotice('An unknown error occurred.');
+		}
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
+
+	if (missing.length !== 0) {
+ 		hideStartButton();
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			let serviceWorkerRegistrationPromise;
+			try {
+				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+			} catch (err) {
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+			}
+			// There's a chance that installing the service worker would fix the issue
+			Promise.race([
+				serviceWorkerRegistrationPromise.then((registration) => {
+					if (registration != null) {
+						return Promise.reject(new Error('Service worker already exists.'));
+					}
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				// For some reason, `getRegistration()` can stall
+				new Promise((resolve) => {
+					setTimeout(() => resolve(), 2000);
+				}),
+			]).then(() => {
+				// Reload if there was no error.
+				window.location.reload();
+			}).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			});
+		} else {
+			// Display the message as usual
+			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+			displayFailureNotice(missingMsg + missing.join('\n'));
+		}
+	} else {
+		readyToStart = true;
+		showStartButton();
+	}
+
+	function startGame() {
+		if (!readyToStart) {
+			return;
+		}
+		readyToStart = false;
+		hideStartButton();
+		setStatusMode('progress');
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (current > 0 && total > 0) {
+					statusProgress.value = current;
+					statusProgress.max = total;
+				} else {
+					statusProgress.removeAttribute('value');
+					statusProgress.removeAttribute('max');
+				}
+			},
+		}).then(() => {
+			setStatusMode('hidden');
+		}, displayFailureNotice);
+	}
+
+	if (startButton) {
+		startButton.addEventListener('click', startGame);
+	}
+}());
+		</script>
+
+    </section>
     </article>
   </body>
 </html>
